@@ -167,6 +167,59 @@
     box-shadow: 0 0 0 3px rgba(201,168,76,0.4), 0 1px 4px rgba(0,0,0,0.35);
     transform: scale(1.25);
   }
+  .office-pin {
+    width: 28px; height: 28px;
+    background: #fff;
+    border: 3px solid #1e3a8a;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  #vendor-legend {
+    display: none;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  #vendor-legend-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+  #vendor-legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #1e293b;
+    white-space: nowrap;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+  }
+  .gmaps-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #1d4ed8;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .gmaps-link:hover { text-decoration: underline; }
 
   /* ── Popup ── */
   .leaflet-popup-content-wrapper {
@@ -405,6 +458,10 @@
         <option value="">— All vendors —</option>
       </select>
       <button id="trade-clear-btn">✕ Clear trade filter</button>
+    </div>
+    <div id="vendor-legend">
+      <div id="vendor-legend-label">Vendor Key</div>
+      <div id="vendor-legend-items"></div>
     </div>
     <div id="sidebar-stats"><strong id="stat-count">52</strong> communities shown &nbsp;·&nbsp; <strong id="stat-starts">—</strong> total starts</div>
     <div id="community-list"></div>
@@ -671,16 +728,61 @@ setTimeout(() => map.invalidateSize(), 200);
 let activeItem = null;
 const markers  = [];
 
-function makeDotIcon(n3, highlighted=false) {
+function makeDotIcon(n3, highlighted=false, color=null) {
   const sz  = highlighted ? Math.round(dotSize(n3) * 1.25) : dotSize(n3);
   const half = sz / 2;
+  const colorStyle = color ? `background:${color};border-color:rgba(255,255,255,0.8);` : '';
   return L.divIcon({
     className: '',
-    html: `<div class="pin-dot${highlighted?' highlighted':''}" style="width:${sz}px;height:${sz}px;"></div>`,
+    html: `<div class="pin-dot${highlighted?' highlighted':''}" style="width:${sz}px;height:${sz}px;${colorStyle}"></div>`,
     iconSize:   [sz, sz],
     iconAnchor: [half, half],
     popupAnchor:[0, -half - 2]
   });
+}
+
+// Vendor color palette — blue/grey/teal/black theme
+const VENDOR_COLORS = ['#1d4ed8','#0f766e','#334155','#1e3a8a','#065f46','#075985','#3f3f46','#1f2937'];
+let vendorColorMap = {};
+
+function getMarkerColor(idx) {
+  if (!currentTrade || currentVendor) return null;
+  const c = communities[idx];
+  const vendor = c.trades && c.trades[currentTrade];
+  return vendor ? (vendorColorMap[vendor] || '#94a3b8') : '#cbd5e1';
+}
+
+function updateVendorColors() {
+  const legend      = document.getElementById('vendor-legend');
+  const legendItems = document.getElementById('vendor-legend-items');
+  if (currentTrade && !currentVendor) {
+    // Build vendor → color map
+    const vendors = [...new Set(
+      communities.filter(c => c.trades && c.trades[currentTrade])
+                 .map(c => c.trades[currentTrade])
+    )].sort();
+    vendorColorMap = {};
+    vendors.forEach((v, i) => { vendorColorMap[v] = VENDOR_COLORS[i % VENDOR_COLORS.length]; });
+    // Render legend
+    legendItems.innerHTML = vendors.map(v =>
+      `<div class="legend-item"><div class="legend-dot" style="background:${vendorColorMap[v]}"></div>${v}</div>`
+    ).join('');
+    legend.style.display = 'block';
+    // Color visible markers
+    communities.forEach((c, idx) => {
+      if (map.hasLayer(markers[idx])) {
+        markers[idx].setIcon(makeDotIcon(next3Total(c), idx === activeItem, getMarkerColor(idx)));
+      }
+    });
+  } else {
+    vendorColorMap = {};
+    legend.style.display = 'none';
+    legendItems.innerHTML = '';
+    // Reset all marker colors
+    communities.forEach((c, idx) => {
+      markers[idx].setIcon(makeDotIcon(next3Total(c), idx === activeItem, null));
+    });
+  }
 }
 
 function buildPopupHTML(c) {
@@ -706,6 +808,7 @@ function buildPopupHTML(c) {
     <div class="popup-header">
       <div class="popup-name">${c.name}</div>
       <div class="popup-addr">${c.addr}</div>
+      <a class="gmaps-link" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank">📍 Get Directions</a>
       <div class="popup-totals">
         <div class="popup-total">12-mo Total: ${total} starts</div>
         ${n3Label}
@@ -759,7 +862,7 @@ communities.forEach((c, idx) => {
   marker.on('click', () => highlightItem(idx));
   marker.on('popupclose', () => {
     const n3 = next3Total(communities[idx]);
-    marker.setIcon(makeDotIcon(n3, false));
+    marker.setIcon(makeDotIcon(n3, false, getMarkerColor(idx)));
     if (activeItem === idx) {
       const el = document.querySelector(`.community-item[data-idx="${idx}"]`);
       if (el) el.classList.remove('active');
@@ -770,6 +873,34 @@ communities.forEach((c, idx) => {
 
   markers.push(marker);
 });
+
+// ── Lennar Orlando Office Pin ──────────────────────────────────────
+const officeIcon = L.divIcon({
+  className: '',
+  html: `<div class="office-pin">🏢</div>`,
+  iconSize:   [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor:[0, -18]
+});
+
+L.marker([28.4356, -81.4711], { icon: officeIcon })
+  .addTo(map)
+  .bindPopup(`
+    <div class="popup-inner">
+      <div class="popup-header">
+        <div class="popup-name">Lennar Orlando Division Office</div>
+        <div class="popup-addr">6675 Westwood Blvd, Orlando, FL</div>
+        <a class="gmaps-link" href="https://www.google.com/maps/dir/?api=1&destination=28.4356,-81.4711" target="_blank">📍 Get Directions</a>
+      </div>
+      <div class="popup-body">
+        <div style="padding:10px 0; font-size:13px; color:#334155; line-height:1.6">
+          <strong>5th Floor</strong><br>
+          This is our home base — where the plans get made, the starts get scheduled, and the coffee runs out by 9 AM.<br><br>
+          <span style="font-size:12px;color:#64748b">Lennar Homes of Florida · Orlando Division</span>
+        </div>
+      </div>
+    </div>
+  `, { maxWidth: 320 });
 
 const infoPanel = document.getElementById('info-panel');
 
@@ -811,13 +942,13 @@ function hideInfoPanel() {
 function highlightItem(idx) {
   if (activeItem !== null) {
     const n3prev = next3Total(communities[activeItem]);
-    markers[activeItem].setIcon(makeDotIcon(n3prev, false));
+    markers[activeItem].setIcon(makeDotIcon(n3prev, false, getMarkerColor(activeItem)));
     const prev = document.querySelector(`.community-item[data-idx="${activeItem}"]`);
     if (prev) prev.classList.remove('active');
   }
   activeItem = idx;
   const n3 = next3Total(communities[idx]);
-  markers[idx].setIcon(makeDotIcon(n3, true));
+  markers[idx].setIcon(makeDotIcon(n3, true, getMarkerColor(idx)));
   const el = document.querySelector(`.community-item[data-idx="${idx}"]`);
   if (el) {
     el.classList.add('active');
@@ -906,7 +1037,9 @@ function applyFilters() {
     else          { if (map.hasLayer(markers[idx]))  map.removeLayer(markers[idx]); }
   });
 
+  filtered.sort((a, b) => a.c.name.localeCompare(b.c.name));
   renderList(filtered);
+  updateVendorColors();
 }
 
 document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
@@ -981,6 +1114,7 @@ tradeClear.addEventListener('click', () => {
   tradeClear.style.display = 'none';
   applyFilters();
 });
+
 
 applyFilters();
 </script>
