@@ -168,13 +168,10 @@
     transform: scale(1.25);
   }
   .office-pin {
-    width: 28px; height: 28px;
-    background: #fff;
-    border: 3px solid #1e3a8a;
-    border-radius: 6px;
+    width: 18px; height: 18px;
     display: flex; align-items: center; justify-content: center;
     font-size: 14px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    opacity: 0.45;
   }
   #vendor-legend {
     display: none;
@@ -878,9 +875,9 @@ communities.forEach((c, idx) => {
 const officeIcon = L.divIcon({
   className: '',
   html: `<div class="office-pin">🏢</div>`,
-  iconSize:   [28, 28],
-  iconAnchor: [14, 14],
-  popupAnchor:[0, -18]
+  iconSize:   [18, 18],
+  iconAnchor: [9, 9],
+  popupAnchor:[0, -12]
 });
 
 L.marker([28.4356, -81.4711], { icon: officeIcon })
@@ -895,7 +892,6 @@ L.marker([28.4356, -81.4711], { icon: officeIcon })
       <div class="popup-body">
         <div style="padding:10px 0; font-size:13px; color:#334155; line-height:1.6">
           <strong>5th Floor</strong><br>
-          This is our home base — where the plans get made, the starts get scheduled, and the coffee runs out by 9 AM.<br><br>
           <span style="font-size:12px;color:#64748b">Lennar Homes of Florida · Orlando Division</span>
         </div>
       </div>
