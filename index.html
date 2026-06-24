@@ -439,7 +439,7 @@
 <div id="app">
   <div id="sidebar">
     <div id="sidebar-top">
-      <input id="search" type="text" placeholder="Search community, city, or #…"/>
+      <input id="search" type="text" placeholder="Search community, city, plan, or #…"/>
       <div id="filter-row">
         <button class="filter-btn active" data-filter="all">All</button>
         <button class="filter-btn" data-filter="active">Active starts</button>
@@ -1020,7 +1020,8 @@ function applyFilters() {
     filtered = filtered.filter(({c}) =>
       c.name.toLowerCase().includes(q) ||
       c.addr.toLowerCase().includes(q) ||
-      c.num.includes(q)
+      c.num.includes(q) ||
+      (c.plans && c.plans.some(p => p.toLowerCase().includes(q)))
     );
   }
 
