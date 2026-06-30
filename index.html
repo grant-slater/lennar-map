@@ -499,10 +499,12 @@
 
     #drawer-handle { display: flex; }
 
-    /* Communities button: above Safari home indicator */
+    /* Communities button: fixed so it's never clipped */
     #mobile-toggle {
       display: flex;
+      position: fixed;
       bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      z-index: 1100;
     }
     #mobile-toggle.list-open { bottom: calc(60vh + 12px); }
 
