@@ -499,14 +499,25 @@
 
     #drawer-handle { display: flex; }
 
-    /* Communities button: fixed so it's never clipped */
+    /* Communities button: full-width bar below header, in normal flow */
     #mobile-toggle {
       display: flex;
-      position: fixed;
-      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      position: static;
+      bottom: auto;
+      left: auto;
+      right: auto;
+      transform: none;
+      width: 100%;
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+      border-bottom: 2px solid #C9A84C;
+      justify-content: center;
+      padding: 10px 20px;
       z-index: 1100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
-    #mobile-toggle.list-open { bottom: calc(60vh + 12px); }
 
     /* Popup fits screen width */
     .leaflet-popup-content-wrapper {
