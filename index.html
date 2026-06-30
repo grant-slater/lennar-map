@@ -416,6 +416,104 @@
     color: #94a3b8;
     font-style: italic;
   }
+
+  /* ── Mobile toggle button (hidden on desktop) ── */
+  #mobile-toggle {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 900;
+    background: #0D1B2A;
+    color: #fff;
+    border: 2px solid #C9A84C;
+    border-radius: 24px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.35);
+    gap: 8px;
+    align-items: center;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  #mobile-toggle .toggle-count {
+    background: #C9A84C;
+    color: #0D1B2A;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Drag handle for mobile drawer */
+  #drawer-handle {
+    display: none;
+    width: 40px;
+    height: 4px;
+    background: #cbd5e1;
+    border-radius: 2px;
+    margin: 8px auto 4px;
+    flex-shrink: 0;
+    cursor: grab;
+  }
+
+  /* ── Mobile responsive overrides ── */
+  @media (max-width: 767px) {
+    #header {
+      padding: 8px 12px;
+      gap: 10px;
+    }
+    #header .logo-block .brand { font-size: 17px; }
+    #header .logo-block .subtitle { font-size: 10px; }
+    #header .update-info { display: none; }
+    #header .meta { font-size: 11px; }
+
+    #app { flex-direction: column; position: relative; overflow: visible; }
+
+    #map { flex: 1; min-height: 0; }
+
+    #sidebar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      min-width: unset;
+      height: 60vh;
+      border-right: none;
+      border-top: 3px solid #C9A84C;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+      z-index: 900;
+    }
+    #sidebar.mobile-open {
+      transform: translateY(0);
+    }
+
+    #drawer-handle { display: flex; }
+
+    #mobile-toggle { display: flex; }
+    #mobile-toggle.list-open { bottom: calc(60vh + 12px); }
+
+    /* Popup fits screen width */
+    .leaflet-popup-content-wrapper {
+      min-width: 0 !important;
+      width: 92vw !important;
+      max-width: 420px !important;
+    }
+
+    /* Legend moves to top-right so it's above the drawer */
+    #legend { bottom: auto; top: 8px; right: 8px; }
+    #basemap-switcher { bottom: 80px; }
+
+    /* Larger tap targets in list */
+    .community-item { padding: 12px 14px; }
+    .filter-btn { padding: 6px 12px; font-size: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -439,6 +537,7 @@
 
 <div id="app">
   <div id="sidebar">
+    <div id="drawer-handle"></div>
     <div id="sidebar-top">
       <input id="search" type="text" placeholder="Search community, city, plan, or #…"/>
       <div id="filter-row">
@@ -464,6 +563,10 @@
     <div id="sidebar-stats"><strong id="stat-count">52</strong> communities shown &nbsp;·&nbsp; <strong id="stat-starts">—</strong> total starts</div>
     <div id="community-list"></div>
   </div>
+
+  <button id="mobile-toggle" onclick="toggleMobileDrawer()">
+    ☰ Communities <span class="toggle-count" id="mobile-toggle-count">52</span>
+  </button>
 
   <div id="map">
     <div id="info-panel">
@@ -1130,6 +1233,40 @@ tradeClear.addEventListener('click', () => {
 
 
 applyFilters();
+
+/* ── Mobile drawer ── */
+function toggleMobileDrawer() {
+  const sidebar = document.getElementById('sidebar');
+  const btn     = document.getElementById('mobile-toggle');
+  const isOpen  = sidebar.classList.toggle('mobile-open');
+  btn.classList.toggle('list-open', isOpen);
+  btn.innerHTML = isOpen
+    ? '✕ Close'
+    : '☰ Communities <span class="toggle-count" id="mobile-toggle-count">' +
+      document.getElementById('stat-count').textContent + '</span>';
+}
+
+// Keep the community count badge in sync with the sidebar stat
+(function() {
+  const statCount = document.getElementById('stat-count');
+  const observer  = new MutationObserver(() => {
+    const badge = document.getElementById('mobile-toggle-count');
+    if (badge) badge.textContent = statCount.textContent;
+  });
+  observer.observe(statCount, { childList: true, characterData: true, subtree: true });
+})();
+
+// Close drawer when a community is tapped on mobile
+document.getElementById('community-list').addEventListener('click', () => {
+  if (window.innerWidth <= 767) {
+    const sidebar = document.getElementById('sidebar');
+    const btn     = document.getElementById('mobile-toggle');
+    sidebar.classList.remove('mobile-open');
+    btn.classList.remove('list-open');
+    btn.innerHTML = '☰ Communities <span class="toggle-count" id="mobile-toggle-count">' +
+      document.getElementById('stat-count').textContent + '</span>';
+  }
+});
 </script>
 </body>
 </html>
