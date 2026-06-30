@@ -818,8 +818,10 @@ function buildPopupHTML(c) {
       <div class="popup-addr">${c.addr}</div>
       <a class="gmaps-link" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank">📍 Get Directions</a>
       <div class="popup-totals">
-        <div class="popup-total">12-mo Total: ${total} starts</div>
-        ${n3Label}
+        ${c.unforecasted
+          ? `<div class="popup-total" style="color:#92400e;background:#fef3c7;padding:4px 10px;border-radius:8px;font-size:12px;">⚠ Starts not forecasted yet — schedule pending</div>`
+          : `<div class="popup-total">12-mo Total: ${total} starts</div>${n3Label}`
+        }
       </div>
     </div>
     <div class="popup-body">
