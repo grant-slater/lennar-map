@@ -462,19 +462,23 @@
 
   /* ── Mobile responsive overrides ── */
   @media (max-width: 767px) {
+    /* Safe area: keeps header below Safari's address bar, button above home indicator */
+    body { padding-top: env(safe-area-inset-top, 0px); }
+
     #header {
-      padding: 8px 12px;
-      gap: 10px;
+      padding: 6px 12px;
+      gap: 8px;
     }
-    #header .logo-block .brand { font-size: 17px; }
+    #header .logo-block .brand { font-size: 16px; }
     #header .logo-block .subtitle { font-size: 10px; }
     #header .update-info { display: none; }
+    #header .divider { display: none; }
     #header .meta { font-size: 11px; }
 
     #app { flex-direction: column; position: relative; overflow: visible; }
-
     #map { flex: 1; min-height: 0; }
 
+    /* Sidebar drawer from bottom */
     #sidebar {
       position: fixed;
       bottom: 0;
@@ -489,14 +493,17 @@
       transform: translateY(100%);
       transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
       z-index: 900;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
-    #sidebar.mobile-open {
-      transform: translateY(0);
-    }
+    #sidebar.mobile-open { transform: translateY(0); }
 
     #drawer-handle { display: flex; }
 
-    #mobile-toggle { display: flex; }
+    /* Communities button: above Safari home indicator */
+    #mobile-toggle {
+      display: flex;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    }
     #mobile-toggle.list-open { bottom: calc(60vh + 12px); }
 
     /* Popup fits screen width */
@@ -506,11 +513,40 @@
       max-width: 420px !important;
     }
 
-    /* Legend moves to top-right so it's above the drawer */
-    #legend { bottom: auto; top: 8px; right: 8px; }
-    #basemap-switcher { bottom: 80px; }
+    /* Legend: bottom-left, collapsed to title only, tap to expand */
+    #legend {
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      left: 10px;
+      right: auto;
+      top: auto;
+      padding: 5px 9px;
+      max-height: 26px;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+      cursor: pointer;
+    }
+    #legend.mob-expanded { max-height: 220px; }
+    #legend .leg-title {
+      font-size: 9px;
+      margin-bottom: 0;
+    }
+    #legend .leg-title::after { content: ' ▲'; color: #94a3b8; }
+    #legend.mob-expanded .leg-title::after { content: ' ▼'; }
+    #legend .leg-section { font-size: 8px; margin: 4px 0 2px; }
+    .leg-row { margin-bottom: 2px; }
+    .leg-swatch { width: 12px; height: 12px; }
 
-    /* Larger tap targets in list */
+    /* Info panel: hide on mobile — popup already shows same info */
+    #info-panel { display: none !important; }
+
+    /* Basemap switcher: bottom-right, above safe area */
+    #basemap-switcher {
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+      left: auto;
+      right: 10px;
+    }
+
+    /* Larger tap targets */
     .community-item { padding: 12px 14px; }
     .filter-btn { padding: 6px 12px; font-size: 12px; }
   }
@@ -1233,6 +1269,11 @@ tradeClear.addEventListener('click', () => {
 
 
 applyFilters();
+
+/* ── Mobile legend toggle ── */
+document.getElementById('legend').addEventListener('click', function() {
+  if (window.innerWidth <= 767) this.classList.toggle('mob-expanded');
+});
 
 /* ── Mobile drawer ── */
 function toggleMobileDrawer() {
